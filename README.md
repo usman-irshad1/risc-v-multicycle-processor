@@ -1,50 +1,101 @@
-# Risc V Multicycle Processor
+# Flagship 32-Bit Multi-Cycle RISC-V Processor with Hardware Multiplier
 
-Flagship 32-bit Multi-Cycle RISC-V Processor with Hardware Multiplier and Unified Memory
+[![Language: SystemVerilog](https://img.shields.io/badge/Language-SystemVerilog%2FVerilog-blue.svg)](https://en.wikipedia.org/wiki/SystemVerilog)
+[![Tool: AMD Vivado](https://img.shields.io/badge/Tool-AMD%2FXilinx%20Vivado-orange.svg)](https://www.xilinx.com/products/design-tools/vivado.html)
+[![Domain: FPGA Design](https://img.shields.io/badge/Domain-FPGA%20%26%20Digital%20Design-green.svg)]()
+[![Author: Mohammad Usman Irshad](https://img.shields.io/badge/Author-Mohammad%20Usman%20Irshad-purple.svg)](https://github.com/usman-irshad1)
 
-## Architecture & Project Modules
-This repository contains the hardware description and simulation models developed in SystemVerilog/Verilog using AMD/Xilinx Vivado.
+## Executive Summary
+**Flagship 32-Bit Multi-Cycle RISC-V Processor with Hardware Multiplier** is a **Flagship CPU Architecture** project implemented in SystemVerilog/Verilog and verified using AMD/Xilinx Vivado Simulator.
 
-### Primary Verilog & Support Files
-- `immediate_gen.sv`
-- `pc.sv`
-- `pc_immediate.sv`
-- `pc_reg.sv`
-- `data_mem.mem`
-- `data_mem.sv`
-- `ins_file.mem`
-- `ins_mem.sv`
-- `reg.mem`
-- `reg_mem.sv`
-- `unified_mem.sv`
-- `write_mem_reg.sv`
-- `Alu_result_reg.sv`
-- `data_reg.sv`
-- `Instruction_reg.sv`
-- `ALU.sv`
-- `ALU_con.sv`
-- `Alu_mux_2.sv`
-- `ALU_output.sv`
-- `mul.sv`
-- `mul_mux_1.sv`
-- `sll.sv`
-- `mux.sv`
-- `mux_1.sv`
-- `mux_2.sv`
-- `mux_source_a.sv`
-- `Control_unit.sv`
-- `fsm_control.sv`
-- `cnonroel.sv`
-- `place_holder.sv`
-- `TOP.sv`
+Flagship 32-bit Multi-Cycle RISC-V Processor Core featuring FSM control, Hardware Multiplier, Shift Unit, and Unified Memory Architecture.
 
-## Build & Simulation Instructions
-1. Open **AMD/Xilinx Vivado** (or ModelSim / Icarus Verilog).
-2. Create a new Vivado RTL Project.
-3. Add the Verilog/SystemVerilog source files located in this repository.
-4. Set the top-level module (e.g. `TOP.sv` or top module) as the Top Module.
-5. Run Behavioral Simulation via `xsim` or launch Synthesis/Implementation.
+---
 
-## Author & Maintainer
-- **Author**: Mohammad Usman Irshad
-- **GitHub Profile**: [@usman-irshad1](https://github.com/usman-irshad1)
+## Architectural Block Diagram
+
+```mermaid
+graph TD
+    PC[PC & PC Reg] --> UMEM[Unified Memory]
+    UMEM --> IR[Instruction Reg]
+    IR --> FSM[FSM Main Controller]
+    FSM --> RF[Register File]
+    RF --> ALUMUX[Operand Select Muxes]
+    ALUMUX --> ALU[ALU Core + Multiplier + Shifter]
+    ALU --> ALUOUT[ALU Out Register]
+    ALUOUT --> UMEM
+```
+
+---
+
+## Core Key Features & Highlights
+
+- Multi-Cycle FSM Control Unit (`Control_unit.sv`, `fsm_control.sv`).
+- Hardware Multiplier (`mul.sv`) and Shift Logic (`sll.sv`).
+- Comprehensive 31-module architecture with individual stage registers.
+- Complete Top-level Processor Module (`TOP.sv`) and testbench verification.
+
+---
+
+## Source Code & Module Index
+
+| File Name | Module Name | Key Interface Signals |
+| :--- | :--- | :--- |
+| `immediate_gen.sv` | `immediate_gen` | `ins` (input), `output logic` (input) |
+| `pc.sv` | `program_counter` | `pc` (output), `input  logic` (output), `clock` (input) |
+| `pc_immediate.sv` | `pc_immediate` | `pc_1` (input), `output logic` (input), `dataW` (input) |
+| `pc_reg.sv` | `pc_reg` | `next_pc` (input), `input logic clock` (input), `input logic reset` (input) |
+| `data_mem.mem` | `data_mem.mem` | Internal Module / Support File |
+| `data_mem.sv` | `data_mem` | `rd` (output), `input logic` (output), `clock` (input) |
+| `ins_file.mem` | `ins_file.mem` | Internal Module / Support File |
+| `ins_mem.sv` | `Instruction_memory` | `pc_byte_address` (input), `output logic` (input), `r2` (output) |
+| `reg.mem` | `reg.mem` | Internal Module / Support File |
+| `reg_mem.sv` | `reg_file` | `rd` (input), `input logic` (input), `r1` (input) |
+| `unified_mem.sv` | `Unified_Memory` | `clock` (input), `input logic` (input), `r1_out` (output) |
+| `write_mem_reg.sv` | `write_back_reg` | `data` (input), `input logic clock` (input), `input logic reset` (input) |
+| `Alu_result_reg.sv` | `Alu_result_reg` | `alu_result` (input), `input logic clock` (input), `input logic reset` (input) |
+| `data_reg.sv` | `data_reg` | `data1` (input), `input logic` (input), `clock` (input) |
+| `Instruction_reg.sv` | `Instruction_reg` | `old_pc` (input), `input logic` (input), `clock` (input) |
+| `ALU.sv` | `ALU` | `ALU_control` (input), `input logic` (input), `data2` (input) |
+| `ALU_con.sv` | `alu_control` | `ALU_op` (input), `input logic` (input), `fun11` (input) |
+| `Alu_mux_2.sv` | `ALU_source2` | `data2` (input), `immediate` (input), `input logic` (input) |
+| `ALU_output.sv` | `ALU_output` | `Alu_result` (input), `input logic` (input), `ALU_output` (output) |
+| `mul.sv` | `multiplication_module` | `ALU_control` (input), `input  logic` (input), `data2` (input) |
+| `mul_mux_1.sv` | `mul_mux` | `ALU_control` (input), `output logic` (input), `alu_1` (input) |
+| `sll.sv` | `sll` | `immediate` (input), `output logic` (input) |
+| `mux.sv` | `mux_3` | `zero` (input), `input branch` (input), `input logic` (input) |
+| `mux_1.sv` | `MUX_1` | `data_from_reg2` (input), `input logic` (input), `data2` (output) |
+| `mux_2.sv` | `MUX_2` | `alu_data` (input), `input  logic` (input), `mem_to_reg` (input) |
+| `mux_source_a.sv` | `mux_source_a` | Internal Module / Support File |
+| `Control_unit.sv` | `Control_unit` | `opcode` (input), `output logic memread` (input), `output logic memwrite` (input) |
+| `fsm_control.sv` | `Control_unit` | `opcode` (input), `input logic` (input), `fun11` (input) |
+| `cnonroel.sv` | `Control_unit` | `opcode` (input), `input logic` (input), `fun11` (input) |
+| `place_holder.sv` | `ALU_source1` | `data1` (input), `pc` (input), `old_pc` (input) |
+| `TOP.sv` | `top` | `clock` (input), `input logic reset` (input), `output logic` (input) |
+
+---
+
+## Hardware Simulation & Verification Guide
+
+### Prerequisites
+- **AMD / Xilinx Vivado Design Suite** (2020.1 or newer recommended)
+- **ModelSim / Icarus Verilog / GTKWave** (Optional alternative simulators)
+
+### Step-by-Step Execution in Vivado
+1. **Open Vivado IDE** and launch a new project.
+2. Select **RTL Project** without specifying sources initially.
+3. Choose your target FPGA Device (e.g. `xc7a35tcpg236-1` Artix-7 or generic).
+4. Click **Add Sources** -> **Add or Create Design Sources** and add all `.sv` / `.v` / `.mem` files from this repository.
+5. Set the primary top-level module (e.g. `TOP.sv` / `top.sv`) as **Top Module**.
+6. Navigate to **Flow Navigator** -> **Simulation** -> **Run Simulation** -> **Run Behavioral Simulation**.
+7. Observe the waveform outputs in `xsim` to confirm state transitions and signal behavior.
+
+---
+
+## Author & Contact Details
+
+Developed and maintained by **Mohammad Usman Irshad**.
+
+* **GitHub Profile**: [@usman-irshad1](https://github.com/usman-irshad1)
+* **Email**: [217554659+usman-irshad1@users.noreply.github.com](mailto:217554659+usman-irshad1@users.noreply.github.com)
+* **Domain**: Digital Design, Verilog/SystemVerilog HDL, Computer Architecture & RISC-V Processor Cores.
