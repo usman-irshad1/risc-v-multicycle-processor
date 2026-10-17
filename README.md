@@ -1,106 +1,75 @@
-# Flagship 32-Bit Multi-Cycle RISC-V Processor with Hardware Multiplier
+# RV32 Multi-Cycle RISC-V Processor
 
-[![Language: SystemVerilog](https://img.shields.io/badge/Language-SystemVerilog%2FVerilog-blue.svg)](https://en.wikipedia.org/wiki/SystemVerilog)
-[![Tool: AMD Vivado](https://img.shields.io/badge/Tool-AMD%2FXilinx%20Vivado-orange.svg)](https://www.xilinx.com/products/design-tools/vivado.html)
-[![Domain: FPGA Design](https://img.shields.io/badge/Domain-FPGA%20%26%20Digital%20Design-green.svg)]()
-[![Author: Mohammad Usman Irshad](https://img.shields.io/badge/Author-Mohammad%20Usman%20Irshad-purple.svg)](https://github.com/usman-irshad1)
+A multi-cycle, 32-bit RISC-V processor written in Verilog/SystemVerilog. The design is organized around an FSM-controlled datapath and includes arithmetic, shift, multiply, divide, and remainder logic. It is a computer-architecture project built to explore how instruction decode, control sequencing, register state, and execution units fit together in a processor.
 
-## Executive Summary
-**Flagship 32-Bit Multi-Cycle RISC-V Processor with Hardware Multiplier** is a **Flagship CPU Architecture** project implemented in SystemVerilog/Verilog and verified using AMD/Xilinx Vivado Simulator.
+This is a student project. The repository currently contains RTL and memory initialization files; it does not include a checked-in testbench, automated build script, or published FPGA resource/timing results. A source inspection also found multiple files declaring a module named `Control_unit` (`Control_unit.sv`, `cnonroel.sv`, and `fsm_control.sv`). These definitions need to be consolidated or separated in the project source set before a clean full-design compile can be claimed. Treat the instruction support described below as implementation intent until the integration issues are resolved and verified against tests.
 
-Flagship 32-bit Multi-Cycle RISC-V Processor Core featuring FSM control, Hardware Multiplier, Shift Unit, and Unified Memory Architecture.
+## At a glance
 
----
+- **Architecture:** 32-bit, multi-cycle datapath
+- **Control:** FSM-based instruction sequencing
+- **HDL:** Verilog/SystemVerilog (`.sv`)
+- **Top-level module:** `top` in `TOP.sv`
+- **Memory model:** unified instruction/data memory in `unified_mem.sv`, plus standalone instruction/data memory modules
+- **Arithmetic:** ALU, shifter, and multiply/divide/remainder unit
+- **Development tool:** AMD/Xilinx Vivado project flow
 
-## Architectural Block Diagram
+## Datapath overview
 
 ```mermaid
-graph TD
-    PC[PC & PC Reg] --> UMEM[Unified Memory]
-    UMEM --> IR[Instruction Reg]
-    IR --> FSM[FSM Main Controller]
-    FSM --> RF[Register File]
-    RF --> ALUMUX[Operand Select Muxes]
-    ALUMUX --> ALU[ALU Core + Multiplier + Shifter]
-    ALU --> ALUOUT[ALU Out Register]
-    ALUOUT --> UMEM
+flowchart LR
+    PC[Program counter] --> IM[Instruction / unified memory]
+    IM --> IR[Instruction register]
+    IR --> CTRL[FSM and control unit]
+    CTRL --> RF[Register file]
+    RF --> MUX[Operand selection]
+    MUX --> ALU[ALU / shifter / M unit]
+    ALU --> RES[Result registers]
+    RES --> MEM[Memory access]
+    MEM --> WB[Write-back selection]
+    WB --> RF
+    CTRL --> PC
+    ALU --> PC
 ```
 
----
+The top module connects the program counter, instruction memory, register file, immediate generator, ALU, multiply/divide unit, memory, control logic, and write-back path. The FSM sequences work across multiple cycles rather than completing every instruction in one cycle.
 
-## Core Key Features & Highlights
+## Instruction support
 
-- Multi-Cycle FSM Control Unit (`Control_unit.sv`, `fsm_control.sv`).
-- Hardware Multiplier (`mul.sv`) and Shift Logic (`sll.sv`).
-- Comprehensive 31-module architecture with individual stage registers.
-- Complete Top-level Processor Module (`TOP.sv`) and testbench verification.
+The ALU decoder includes encodings for common RV32I arithmetic/logical operations and the RISC-V M-extension operations (MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU). The repository does not yet include an ISA compliance suite or self-checking testbench, and the current top-level integration needs cleanup, so this list describes decode paths present in the RTL, not a claim of a working or compliant RV32IM core.
 
----
+Before describing this core as RV32IM-compliant, verify all operations against the RISC-V specification, including signed/unsigned high-product results, divide-by-zero, signed overflow, and remainder corner cases. In particular, review the high/low result selection and register write-back behavior in `mul.sv` and `mul_mux_1.sv`.
 
-## Source Code & Module Index
+## Repository layout
 
-| File Name | Module Name | Key Interface Signals |
-| :--- | :--- | :--- |
-| `immediate_gen.sv` | `immediate_gen` | `ins` (input), `output logic` (input) |
-| `pc.sv` | `program_counter` | `pc` (output), `input  logic` (output), `clock` (input) |
-| `pc_immediate.sv` | `pc_immediate` | `pc_1` (input), `output logic` (input), `dataW` (input) |
-| `pc_reg.sv` | `pc_reg` | `next_pc` (input), `input logic clock` (input), `input logic reset` (input) |
-| `data_mem.mem` | `data_mem.mem` | Internal Module / Support File |
-| `data_mem.sv` | `data_mem` | `rd` (output), `input logic` (output), `clock` (input) |
-| `ins_file.mem` | `ins_file.mem` | Internal Module / Support File |
-| `ins_mem.sv` | `Instruction_memory` | `pc_byte_address` (input), `output logic` (input), `r2` (output) |
-| `reg.mem` | `reg.mem` | Internal Module / Support File |
-| `reg_mem.sv` | `reg_file` | `rd` (input), `input logic` (input), `r1` (input) |
-| `unified_mem.sv` | `Unified_Memory` | `clock` (input), `input logic` (input), `r1_out` (output) |
-| `write_mem_reg.sv` | `write_back_reg` | `data` (input), `input logic clock` (input), `input logic reset` (input) |
-| `Alu_result_reg.sv` | `Alu_result_reg` | `alu_result` (input), `input logic clock` (input), `input logic reset` (input) |
-| `data_reg.sv` | `data_reg` | `data1` (input), `input logic` (input), `clock` (input) |
-| `Instruction_reg.sv` | `Instruction_reg` | `old_pc` (input), `input logic` (input), `clock` (input) |
-| `ALU.sv` | `ALU` | `ALU_control` (input), `input logic` (input), `data2` (input) |
-| `ALU_con.sv` | `alu_control` | `ALU_op` (input), `input logic` (input), `fun11` (input) |
-| `Alu_mux_2.sv` | `ALU_source2` | `data2` (input), `immediate` (input), `input logic` (input) |
-| `ALU_output.sv` | `ALU_output` | `Alu_result` (input), `input logic` (input), `ALU_output` (output) |
-| `mul.sv` | `multiplication_module` | `ALU_control` (input), `input  logic` (input), `data2` (input) |
-| `mul_mux_1.sv` | `mul_mux` | `ALU_control` (input), `output logic` (input), `alu_1` (input) |
-| `sll.sv` | `sll` | `immediate` (input), `output logic` (input) |
-| `mux.sv` | `mux_3` | `zero` (input), `input branch` (input), `input logic` (input) |
-| `mux_1.sv` | `MUX_1` | `data_from_reg2` (input), `input logic` (input), `data2` (output) |
-| `mux_2.sv` | `MUX_2` | `alu_data` (input), `input  logic` (input), `mem_to_reg` (input) |
-| `mux_source_a.sv` | `mux_source_a` | Internal Module / Support File |
-| `Control_unit.sv` | `Control_unit` | `opcode` (input), `output logic memread` (input), `output logic memwrite` (input) |
-| `fsm_control.sv` | `Control_unit` | `opcode` (input), `input logic` (input), `fun11` (input) |
-| `cnonroel.sv` | `Control_unit` | `opcode` (input), `input logic` (input), `fun11` (input) |
-| `place_holder.sv` | `ALU_source1` | `data1` (input), `pc` (input), `old_pc` (input) |
-| `TOP.sv` | `top` | `clock` (input), `input logic reset` (input), `output logic` (input) |
+| File(s) | Purpose |
+|---|---|
+| `TOP.sv` | Integrates the processor as module `top` |
+| `fsm_control.sv`, `Control_unit.sv`, `cnonroel.sv` | Instruction control and sequencing logic |
+| `ALU.sv`, `ALU_con.sv`, `sll.sv` | Arithmetic/logical operations, decode, and shifting |
+| `mul.sv`, `mul_mux_1.sv` | Multiply/divide/remainder datapath and result selection |
+| `reg_mem.sv` | Register-file implementation |
+| `immediate_gen.sv`, `pc.sv`, `pc_immediate.sv` | Immediate generation and program-counter path |
+| `ins_mem.sv`, `data_mem.sv`, `unified_mem.sv` | Instruction/data memory models |
+| `*_reg.sv`, `mux*.sv`, `place_holder.sv` | Pipeline/state registers and datapath selection logic |
+| `*.mem` | Example memory/register initialization inputs |
 
----
+Some module and file names are historical and may not match the module's role exactly. The table is a guide to the main components; inspect module declarations for exact port names and behavior.
 
-## Hardware Simulation & Verification Guide
+## Open and simulate with Vivado
 
-### Prerequisites
-- **AMD / Xilinx Vivado Design Suite** (2020.1 or newer recommended)
-- **ModelSim / Icarus Verilog / GTKWave** (Optional alternative simulators)
+1. Clone the repository and open Vivado.
+2. Create an RTL project and add the `.sv` sources and required `.mem` initialization files.
+3. Set `top` (from `TOP.sv`) as the synthesis/design top.
+4. To run behavioral simulation, add a testbench as the simulation top. **No testbench is currently included in this repository**, so one must be created before this step can produce a meaningful end-to-end check.
+5. Ensure memory initialization paths resolve from the simulator's working directory, then inspect waveforms and compare architectural state with expected results.
 
-### Step-by-Step Execution in Vivado
-1. **Open Vivado IDE** and launch a new project.
-2. Select **RTL Project** without specifying sources initially.
-3. Choose your target FPGA Device (e.g. `xc7a35tcpg236-1` Artix-7 or generic).
-4. Click **Add Sources** -> **Add or Create Design Sources** and add all `.sv` / `.v` / `.mem` files from this repository.
-5. Set the primary top-level module (e.g. `TOP.sv` / `top.sv`) as **Top Module**.
-6. Navigate to **Flow Navigator** -> **Simulation** -> **Run Simulation** -> **Run Behavioral Simulation**.
-7. Observe the waveform outputs in `xsim` to confirm state transitions and signal behavior.
+The RTL has not been accompanied here by a reproducible command-line build, a checked-in Vivado project, or measured FPGA implementation results. Device-specific synthesis and timing claims should be added only after running and documenting those flows. Resolve the duplicate `Control_unit` declarations and align the top-level module's connections with the chosen control-unit interface before claiming the full design compiles.
 
----
+## Verification roadmap
 
+The most useful next step is a self-checking testbench that loads short instruction sequences and checks register/memory results. Start with reset and PC sequencing, then cover immediate and register arithmetic, branches, loads/stores, and each M-extension operation. Include directed corner cases for signedness and exceptional arithmetic, and record simulator/version plus run instructions.
 
----
+## Author
 
----
-
-## Author & Contact Details
-
-Developed and maintained by **Mohammad Usman Irshad**.
-
-* **GitHub Profile**: [@usman-irshad1](https://github.com/usman-irshad1)
-* **Email**: [217554659+usman-irshad1@users.noreply.github.com](mailto:217554659+usman-irshad1@users.noreply.github.com)
-* **Domain**: Digital Design, Verilog/SystemVerilog HDL, Computer Architecture & RISC-V Processor Cores.
+Mohammad Usman Irshad · [GitHub profile](https://github.com/usman-irshad1)
